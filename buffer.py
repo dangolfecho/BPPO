@@ -3,6 +3,8 @@ import torch
 import numpy as np
 from tqdm import tqdm
 from utils import CONST_EPS
+import minari
+from einops import rearrange
 
 
 
@@ -117,9 +119,18 @@ class OfflineReplayBuffer(OnlineReplayBuffer):
 
 
     def load_dataset(
-        self, dataset: dict
+        self, dataset
     ) -> None:
-        
+        index = 0
+        for episode in dataset.iterate_episodes(range(0, len(dataset))):
+            self._state[index:(index+len(episode)),:] = episode.observations[:-1, :]
+            self._action[index:(index+len(episode)),:] = episode.actions[:-1, :]
+            self._reward[index:(index+len(episode)),:] = rearrange(episode.rewards[:-1, :], "x -> x 1")
+            self._next_state[index:(index+len(episode)),:] = episode.observations[1:, :]
+            self._next_action[index:(index+len(episode)), :] = episode.actions[1:, :]
+            index += len(episode)+1
+            break
+        exit()
         self._state = dataset['observations'][:-1, :]
         self._action = dataset['actions'][:-1, :]
         self._reward = dataset['rewards'].reshape(-1, 1)[:-1, :]

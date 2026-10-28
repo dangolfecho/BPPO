@@ -1,5 +1,7 @@
-import gym
-import d4rl
+import PyFlyt.gym_envs
+import gymnasium as gym
+#import d4rl
+import minari
 import torch
 import numpy as np
 import os
@@ -79,7 +81,7 @@ if __name__ == "__main__":
 
     env = gym.make(args.env)
     # seed
-    env.seed(args.seed)
+    env.reset(seed=args.seed)
     env.action_space.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
@@ -92,7 +94,9 @@ if __name__ == "__main__":
     
 
     # offline dataset to replay buffer
-    dataset = env.get_dataset()
+    print(((args.env).split('/'))[1])
+    dataset_id = ((args.env).split('/'))[1]+"/"+"dataset-14-0-20-v3"
+    dataset = minari.load_dataset(dataset_id)
     replay_buffer = OfflineReplayBuffer(device, state_dim, action_dim, len(dataset['actions']))
     replay_buffer.load_dataset(dataset=dataset)
     replay_buffer.compute_return(args.gamma)
