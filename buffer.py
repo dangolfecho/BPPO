@@ -34,6 +34,8 @@ class OnlineReplayBuffer:
         self._return = np.zeros((self._size, 1), dtype=np.float32)
         self._advantage = np.zeros((self._size, 1), dtype=np.float32)
 
+    def get_max_min_reward(self) -> (float, float):
+        return (self._reward.max(), self._reward.min())
 
     def compute_return(
         self, gamma: float
