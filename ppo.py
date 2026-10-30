@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import torch
 import numpy as np
 from copy import deepcopy
@@ -153,15 +153,17 @@ class ProximalPolicyOptimization:
         eval_episodes: int=10
         ) -> float:
         env = gym.make(env_name)
-        env.seed(seed)
+        env.reset(seed=seed)
 
         total_reward = 0
         for _ in range(eval_episodes):
-            s, done = env.reset(), False
+            done = False
+            s, info = env.reset()
             while not done:
                 s = torch.FloatTensor((np.array(s).reshape(1, -1) - mean) / std).to(self._device)
                 a = self.select_action(s, is_sample=False).cpu().data.numpy().flatten()
-                s, r, done, _ = env.step(a)
+                s, r, term, trunc, info = env.step(a)
+                done = (term or trunc)
                 total_reward += r
         
         avg_reward = total_reward / eval_episodes
