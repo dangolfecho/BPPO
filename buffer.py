@@ -16,29 +16,24 @@ class OnlineReplayBuffer:
 
     def __init__(
         self, 
+        device: torch.device,
         buffer: ReplayBuffer,
     ) -> None:
 
         self._device = device
+        self._size = (buffer.size()-1)
+
+        observations = buffer.observations
+        actions = buffer.actions
         self._buffer = buffer
-
-    def store(
-        self,
-        s: np.ndarray,
-        a: np.ndarray,
-        r: np.ndarray,
-        s_p: np.ndarray,
-        a_p: np.ndarray,
-        not_done: bool
-    ) -> None:
-
-        self._state[self._size] = s
-        self._action[self._size] = a
-        self._reward[self._size] = r
-        self._next_state[self._size] = s_p
-        self._next_action[self._size] = a_p
-        self._not_done[self._size] = not_done
-        self._size += 1
+        self._state = observations[:-1, :]
+        self._action = actions[:-1, :]
+        self._reward = (buffer.rewards)[:-1, :]
+        self._next_state = observations[1:,:]
+        self._next_action = actions[1:, :]
+        self._not_done = 1. - (buffer.done)[:-1, :]
+        self._return = np.zeros((self._size, 1), dtype=np.float32)
+        self._advantage = np.zeros((self._size, 1), dtype=np.float32)
 
 
     def compute_return(
@@ -75,8 +70,19 @@ class OnlineReplayBuffer:
     def sample(
         self, batch_size: int
     ) -> TransitionMiniBatch:
+        #Expect s, a, r, s', a, not_done, return, advantage
+        ind = np.random.randint(0, self._size, size=batch_size)
 
-        return _buffer.sample_transition_batch(batch_size)
+        return (
+                torch.FloatTensor(self._state[ind]).to(self._device),
+                torch.FloatTensor(self._action[ind]).to(self._device),
+                torch.FloatTensor(self._reward[ind]).to(self._device),
+                torch.FloatTensor(self._next_state[ind]).to(self._device),
+                torch.FloatTensor(self._next_action[ind]).to(self._device),
+                torch.FloatTensor(self._not_done[ind]).to(self._device),
+                torch.FloatTensor(self._return[ind]).to(self._device),
+                torch.FloatTensor(self._advantage[ind]).to(self._device),
+        )
 
 
 
