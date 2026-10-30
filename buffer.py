@@ -4,7 +4,6 @@ import numpy as np
 from tqdm import tqdm
 from utils import CONST_EPS
 import minari
-from einops import rearrange
 from d3rlpy.dataset import ReplayBuffer
 from d3rlpy.dataset.mini_batch import TransitionMiniBatch
 
