@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import torch
 import numpy as np
 from buffer import OnlineReplayBuffer
@@ -6,6 +6,7 @@ from net import GaussPolicyMLP
 from critic import ValueLearner, QLearner
 from ppo import ProximalPolicyOptimization
 from utils import CONST_EPS, log_prob_func, orthogonal_initWeights
+import PyFlyt.gym_envs
 
 
 class BehaviorCloning:
@@ -22,7 +23,9 @@ class BehaviorCloning:
         depth: int,
         action_dim: int,
         policy_lr: float,
-        batch_size: int
+        batch_size: int,
+        max_reward: float,
+        min_reward: float,
     ) -> None:
         super().__init__()
         self._device = device
@@ -34,6 +37,8 @@ class BehaviorCloning:
         )
         self._lr = policy_lr
         self._batch_size = batch_size
+        self._max_reward = max_reward
+        self._min_reward = min_reward
         
 
     def loss(
@@ -71,6 +76,8 @@ class BehaviorCloning:
         action = action.clamp(-1., 1.)
         return action
 
+    def get_normalized_score(self, reward: float) -> float:
+        return ((reward - self._min_reward) / (self._max_reward - self._min_reward))
 
     def offline_evaluate(
         self,
@@ -81,19 +88,22 @@ class BehaviorCloning:
         eval_episodes: int=10
         ) -> float:
         env = gym.make(env_name)
-        env.seed(seed)
+        env.reset(seed=seed)
 
         total_reward = 0
         for _ in range(eval_episodes):
-            s, done = env.reset(), False
+            s, info = env.reset()
+            done = False
             while not done:
                 s = torch.FloatTensor((np.array(s).reshape(1, -1) - mean) / std).to(self._device)
                 a = self.select_action(s, is_sample=False).cpu().data.numpy().flatten()
-                s, r, done, _ = env.step(a)
+                #s, r, done, _ = env.step(a)
+                s, r, term, trunc, info = env.step(a)
+                done = (term or trunc)
                 total_reward += r
         
         avg_reward = total_reward / eval_episodes
-        d4rl_score = env.get_normalized_score(avg_reward) * 100
+        d4rl_score = self.get_normalized_score(avg_reward) * 100
         return d4rl_score
     
 
@@ -126,7 +136,9 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
         entropy_weight: float,
         decay: float,
         omega: float,
-        batch_size: int
+        batch_size: int,
+        max_reward: float,
+        min_reward: float,
     ) -> None:
         super().__init__(
             device = device,
@@ -140,7 +152,11 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
             decay = decay,
             omega = omega,
             batch_size = batch_size)
+        self._max_reward = max_reward
+        self._min_reward = min_reward
 
+    def get_normalized_score(self, reward: float) -> float:
+        return ((reward - self._min_reward) / (self._max_reward - self._min_reward))
 
     def loss(
         self, 
@@ -190,5 +206,5 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
         ) -> float:
         env = gym.make(env_name)
         avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes)
-        d4rl_score = env.get_normalized_score(avg_reward) * 100
+        d4rl_score = self.get_normalized_score(avg_reward) * 100
         return d4rl_score
