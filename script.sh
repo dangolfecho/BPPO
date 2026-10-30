@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python min_port.py "--env" "PyFlyt/QuadX-Hover-v4"
+python main.py "--env" "PyFlyt/QuadX-Hover-v4"

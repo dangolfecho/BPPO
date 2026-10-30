@@ -1,7 +1,7 @@
 import PyFlyt.gym_envs
 import gymnasium as gym
 #import d4rl
-import minari
+import d3rlpy
 import torch
 import numpy as np
 import os
@@ -94,11 +94,13 @@ if __name__ == "__main__":
     
 
     # offline dataset to replay buffer
-    print(((args.env).split('/'))[1])
-    dataset_id = ((args.env).split('/'))[1]+"/"+"dataset-14-0-20-v3"
-    dataset = minari.load_dataset(dataset_id)
-    replay_buffer = OfflineReplayBuffer(device, state_dim, action_dim, len(dataset['actions']))
-    replay_buffer.load_dataset(dataset=dataset)
+    #print(((args.env).split('/'))[1])
+    #dataset_id = ((args.env).split('/'))[1]+"/"+"dataset-14-0-20-v3"
+    dataset_name = "QuadX-Hover-v4/dataset-14-60-80-v1"
+    dataset, env = d3rlpy.datasets.get_minari(dataset_name,
+            action_space=d3rlpy.ActionSpace.CONTINUOUS,
+            online = False)
+    replay_buffer = OfflineReplayBuffer(device, dataset)
     replay_buffer.compute_return(args.gamma)
     
     #for hopper-medium-v2 task, don't use state normalize
