@@ -96,12 +96,13 @@ if __name__ == "__main__":
     # offline dataset to replay buffer
     #print(((args.env).split('/'))[1])
     #dataset_id = ((args.env).split('/'))[1]+"/"+"dataset-14-0-20-v3"
-    dataset_name = "QuadX-Hover-v4/dataset-14-60-80-v1"
+    dataset_name = "QuadX-Hover-v4/dataset-14-combined-v0"
     dataset, env = d3rlpy.datasets.get_minari(dataset_name,
             action_space=d3rlpy.ActionSpace.CONTINUOUS,
             online = False)
     replay_buffer = OfflineReplayBuffer(device, dataset)
     replay_buffer.compute_return(args.gamma)
+    max_reward, min_reward = replay_buffer.get_max_min_reward()
     
     #for hopper-medium-v2 task, don't use state normalize
     if args.is_state_norm:
@@ -120,8 +121,12 @@ if __name__ == "__main__":
     Q_bc = QSarsaLearner(device, state_dim, action_dim, args.q_hidden_dim, args.q_depth, args.q_lr, args.target_update_freq, args.tau, args.gamma, args.q_batch_size)
     if args.is_offpolicy_update:
         Q_pi = QPiLearner(device, state_dim, action_dim, args.q_hidden_dim, args.q_depth, args.q_lr, args.target_update_freq, args.tau, args.gamma, args.q_batch_size)
-    bc = BehaviorCloning(device, state_dim, args.bc_hidden_dim, args.bc_depth, action_dim, args.bc_lr, args.bc_batch_size)
-    bppo = BehaviorProximalPolicyOptimization(device, state_dim, args.bppo_hidden_dim, args.bppo_depth, action_dim, args.bppo_lr, args.clip_ratio, args.entropy_weight, args.decay, args.omega, args.bppo_batch_size)
+    bc = BehaviorCloning(device, state_dim, args.bc_hidden_dim, args.bc_depth,
+    action_dim, args.bc_lr, args.bc_batch_size, max_reward, min_reward)
+    bppo = BehaviorProximalPolicyOptimization(device, state_dim,
+    args.bppo_hidden_dim, args.bppo_depth, action_dim, args.bppo_lr,
+    args.clip_ratio, args.entropy_weight, args.decay, args.omega,
+    args.bppo_batch_size, max_reward, min_reward)
 
 
     # value training 
