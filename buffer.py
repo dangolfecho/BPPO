@@ -5,40 +5,22 @@ from tqdm import tqdm
 from utils import CONST_EPS
 import minari
 from einops import rearrange
+from d3rlpy.dataset import ReplayBuffer
+from d3rlpy.dataset.mini_batch import TransitionMiniBatch
 
 
 
 class OnlineReplayBuffer:
     _device: torch.device
-    _state: np.ndarray
-    _action: np.ndarray
-    _reward: np.ndarray
-    _next_state: np.ndarray
-    _next_action: np.ndarray
-    _not_done: np.ndarray
-    _return: np.ndarray
-    _size: int
-
+    _buffer: ReplayBuffer
 
     def __init__(
         self, 
-        device: torch.device, 
-        state_dim: int, action_dim: int, max_size: int
+        buffer: ReplayBuffer,
     ) -> None:
 
         self._device = device
-
-        self._state = np.zeros((max_size, state_dim))
-        self._action = np.zeros((max_size, action_dim))
-        self._reward = np.zeros((max_size, 1))
-        self._next_state = np.zeros((max_size, state_dim))
-        self._next_action = np.zeros((max_size, action_dim))
-        self._not_done = np.zeros((max_size, 1))
-        self._return = np.zeros((max_size, 1))
-        self._advantage = np.zeros((max_size, 1))
-
-        self._size = 0
-
+        self._buffer = buffer
 
     def store(
         self,
@@ -92,54 +74,13 @@ class OnlineReplayBuffer:
 
     def sample(
         self, batch_size: int
-    ) -> tuple:
+    ) -> TransitionMiniBatch:
 
-        ind = np.random.randint(0, self._size, size=batch_size)
-
-        return (
-            torch.FloatTensor(self._state[ind]).to(self._device),
-            torch.FloatTensor(self._action[ind]).to(self._device),
-            torch.FloatTensor(self._reward[ind]).to(self._device),
-            torch.FloatTensor(self._next_state[ind]).to(self._device),
-            torch.FloatTensor(self._next_action[ind]).to(self._device),
-            torch.FloatTensor(self._not_done[ind]).to(self._device),
-            torch.FloatTensor(self._return[ind]).to(self._device),
-            torch.FloatTensor(self._advantage[ind]).to(self._device)
-        )
+        return _buffer.sample_transition_batch(batch_size)
 
 
 
 class OfflineReplayBuffer(OnlineReplayBuffer):
-
-    def __init__(
-        self, device: torch.device, 
-        state_dim: int, action_dim: int, max_size: int
-    ) -> None:
-        super().__init__(device, state_dim, action_dim, max_size)
-
-
-    def load_dataset(
-        self, dataset
-    ) -> None:
-        index = 0
-        for episode in dataset.iterate_episodes(range(0, len(dataset))):
-            self._state[index:(index+len(episode)),:] = episode.observations[:-1, :]
-            self._action[index:(index+len(episode)),:] = episode.actions[:-1, :]
-            self._reward[index:(index+len(episode)),:] = rearrange(episode.rewards[:-1, :], "x -> x 1")
-            self._next_state[index:(index+len(episode)),:] = episode.observations[1:, :]
-            self._next_action[index:(index+len(episode)), :] = episode.actions[1:, :]
-            index += len(episode)+1
-            break
-        exit()
-        self._state = dataset['observations'][:-1, :]
-        self._action = dataset['actions'][:-1, :]
-        self._reward = dataset['rewards'].reshape(-1, 1)[:-1, :]
-        self._next_state = dataset['observations'][1:, :]
-        self._next_action = dataset['actions'][1:, :]
-        self._not_done = 1. - (dataset['terminals'].reshape(-1, 1)[:-1, :] | dataset['timeouts'].reshape(-1, 1)[:-1, :])
-
-        self._size = len(dataset['actions']) - 1
-
 
     def normalize_state(
         self
