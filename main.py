@@ -103,6 +103,38 @@ if __name__ == "__main__":
     replay_buffer = OfflineReplayBuffer(device, dataset)
     replay_buffer.compute_return(args.gamma)
     max_reward, min_reward = replay_buffer.get_max_min_reward()
+
+    adaptive_train_flag = True
+    pos_orn_flag = 1
+    flag = 0
+    mode = 2
+    lower_bound = 0
+    upper_bound = 80
+    lower_bound *= (3.14/180)
+    upper_bound *= (3.14/180)
+    flight_dome_size = 150
+    reward_flag = 0
+    Z = 10.0
+    max_duration_seconds = 10
+    start_pos_dict = {"x": 0.0, "y": 0.0, "z": Z} 
+    start_orn_dict = {"r": 0.0, "p": 0.0, "y": 0.0} 
+    goal_state_dict = {"x": 0.0, "y": 0.0, "z": Z} 
+    sparse_reward = 0
+    env_config = {"adaptive_train_flag": adaptive_train_flag,
+            "pos_orn_flag": pos_orn_flag,
+            "flag": flag,
+            "mode": mode,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
+            "flight_dome_size": flight_dome_size,
+            "reward_flag": reward_flag,
+            "Z": Z,
+            "start_pos_dict": start_pos_dict,
+            "start_orn_dict": start_orn_dict,
+            "goal_state_dict": goal_state_dict,
+            "sparse_reward": sparse_reward,
+            "max_duration_seconds": max_duration_seconds,
+    }
     
     #for hopper-medium-v2 task, don't use state normalize
     if args.is_state_norm:
@@ -170,7 +202,8 @@ if __name__ == "__main__":
             bc_loss = bc.update(replay_buffer)
 
             if step % int(args.log_freq) == 0:
-                current_bc_score = bc.offline_evaluate(args.env, args.seed, mean, std)
+                current_bc_score = bc.offline_evaluate(args.env, args.seed,
+                        mean, std, env_config=env_config)
                 if current_bc_score > best_bc_score:
                     best_bc_score = current_bc_score
                     bc.save(best_bc_path)
@@ -188,7 +221,8 @@ if __name__ == "__main__":
     best_bppo_path = os.path.join(path, current_time, 'bppo_best.pt')
     Q = Q_bc
 
-    best_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean, std)
+    best_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean, std,
+            env_config=env_config)
     print('best_bppo_score:',best_bppo_score,'-------------------------')
 
     for step in tqdm(range(int(args.bppo_steps)), desc='bppo updating ......'):
@@ -196,7 +230,8 @@ if __name__ == "__main__":
             args.is_clip_decay = False
             args.is_bppo_lr_decay = False
         bppo_loss = bppo.update(replay_buffer, Q, value, args.is_clip_decay, args.is_bppo_lr_decay)
-        current_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean, std)
+        current_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean,
+                std, env_config=env_config)
 
         if current_bppo_score > best_bppo_score:
             best_bppo_score = current_bppo_score

@@ -85,9 +85,41 @@ class BehaviorCloning:
         seed: int,
         mean: np.ndarray,
         std: np.ndarray,
-        eval_episodes: int=10
+        eval_episodes: int=10,
+        render_mode: str="",
+        env_config: dict = {},
         ) -> float:
-        env = gym.make(env_name)
+        if(render_mode == "human"):
+            env = gym.make(env_name,
+                    adaptive_train_flag=env_config["adaptive_train_flag"],
+                    pos_orn_flag=env_config["pos_orn_flag"],
+                    flag=env_config["flag"],
+                    mode=env_config["mode"],
+                    lower_bound=env_config["lower_bound"],
+                    upper_bound=env_config["upper_bound"],
+                    flight_dome_size=env_config["flight_dome_size"],
+                    sparse_reward=env_config["sparse_reward"],
+                    max_duration_seconds=env_config["max_duration_seconds"],
+                    start_pos_dict=env_config["start_pos_dict"],
+                    start_orn_dict=env_config["start_orn_dict"],
+                    goal_state_dict=env_config["goal_state_dict"],
+                    render_mode=render_mode,
+                )
+        else:
+            env = gym.make(env_name,
+                    adaptive_train_flag=env_config["adaptive_train_flag"],
+                    pos_orn_flag=env_config["pos_orn_flag"],
+                    flag=env_config["flag"],
+                    mode=env_config["mode"],
+                    lower_bound=env_config["lower_bound"],
+                    upper_bound=env_config["upper_bound"],
+                    flight_dome_size=env_config["flight_dome_size"],
+                    sparse_reward=env_config["sparse_reward"],
+                    max_duration_seconds=env_config["max_duration_seconds"],
+                    start_pos_dict=env_config["start_pos_dict"],
+                    start_orn_dict=env_config["start_orn_dict"],
+                    goal_state_dict=env_config["goal_state_dict"],
+                    )
         env.reset(seed=seed)
 
         total_reward = 0
@@ -202,9 +234,42 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
         seed: int,
         mean: np.ndarray,
         std: np.ndarray,
-        eval_episodes: int=10
+        eval_episodes: int=10,
+        render_mode="",
+        env_config: dict = {},
         ) -> float:
-        env = gym.make(env_name)
-        avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes)
+        if(render_mode == "human"):
+            env = gym.make(env_name,
+                    adaptive_train_flag=env_config["adaptive_train_flag"],
+                    pos_orn_flag=env_config["pos_orn_flag"],
+                    flag=env_config["flag"],
+                    mode=env_config["mode"],
+                    lower_bound=env_config["lower_bound"],
+                    upper_bound=env_config["upper_bound"],
+                    flight_dome_size=env_config["flight_dome_size"],
+                    sparse_reward=env_config["sparse_reward"],
+                    max_duration_seconds=env_config["max_duration_seconds"],
+                    start_pos_dict=env_config["start_pos_dict"],
+                    start_orn_dict=env_config["start_orn_dict"],
+                    goal_state_dict=env_config["goal_state_dict"],
+                    render_mode=render_mode,
+                )
+        else:
+            env = gym.make(env_name,
+                    adaptive_train_flag=env_config["adaptive_train_flag"],
+                    pos_orn_flag=env_config["pos_orn_flag"],
+                    flag=env_config["flag"],
+                    mode=env_config["mode"],
+                    lower_bound=env_config["lower_bound"],
+                    upper_bound=env_config["upper_bound"],
+                    flight_dome_size=env_config["flight_dome_size"],
+                    sparse_reward=env_config["sparse_reward"],
+                    max_duration_seconds=env_config["max_duration_seconds"],
+                    start_pos_dict=env_config["start_pos_dict"],
+                    start_orn_dict=env_config["start_orn_dict"],
+                    goal_state_dict=env_config["goal_state_dict"],
+                    )
+        avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes,
+                "human", env_config)
         d4rl_score = self.get_normalized_score(avg_reward) * 100
         return d4rl_score
