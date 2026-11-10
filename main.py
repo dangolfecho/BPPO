@@ -96,7 +96,7 @@ if __name__ == "__main__":
     # offline dataset to replay buffer
     #print(((args.env).split('/'))[1])
     #dataset_id = ((args.env).split('/'))[1]+"/"+"dataset-14-0-20-v3"
-    dataset_name = "QuadX-Hover-v4/dataset-14-combined-v0"
+    dataset_name = "QuadX-Hover-v4/dataset-14-combined-10M-v0"
     dataset, env = d3rlpy.datasets.get_minari(dataset_name,
             action_space=d3rlpy.ActionSpace.CONTINUOUS,
             online = False)
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     if os.path.exists(best_bc_path):
         bc.load(best_bc_path)
     else:
-        best_bc_score = 0    
+        best_bc_score = -2e6    
         for step in tqdm(range(int(args.bc_steps)), desc='bc updating ......'):
             bc_loss = bc.update(replay_buffer)
 
