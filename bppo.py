@@ -269,7 +269,9 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
                     start_orn_dict=env_config["start_orn_dict"],
                     goal_state_dict=env_config["goal_state_dict"],
                     )
+        #avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes,
+                #"human", env_config)
         avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes,
-                "human", env_config)
+                "", env_config)
         d4rl_score = self.get_normalized_score(avg_reward) * 100
         return d4rl_score
