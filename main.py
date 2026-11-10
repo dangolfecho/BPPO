@@ -128,7 +128,6 @@ if __name__ == "__main__":
             "upper_bound": upper_bound,
             "flight_dome_size": flight_dome_size,
             "reward_flag": reward_flag,
-            "Z": Z,
             "start_pos_dict": start_pos_dict,
             "start_orn_dict": start_orn_dict,
             "goal_state_dict": goal_state_dict,
