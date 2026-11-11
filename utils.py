@@ -21,3 +21,19 @@ def log_prob_func(
         return log_prob
     else:
         return log_prob.sum(-1, keepdim=True)
+
+def scale_action(a, low, high):
+    """
+
+    env action range -> [-1, 1]
+
+    """
+    return 2.0 * (a - low) / (high - low) - 1.0
+
+def unscale_action(a, low, high):
+    """
+
+    [-1, 1] -> env action range
+
+    """
+    return low + (a + 1.0) * 0.5 * (high - low)
