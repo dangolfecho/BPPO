@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 from tqdm import tqdm
-from utils import CONST_EPS
+from utils import CONST_EPS, scale_action
 import minari
 from d3rlpy.dataset import ReplayBuffer
 from d3rlpy.dataset.mini_batch import TransitionMiniBatch
@@ -17,6 +17,8 @@ class OnlineReplayBuffer:
         self, 
         device: torch.device,
         buffer: ReplayBuffer,
+        action_low: np.ndarray = None,
+        action_high: np.ndarray = None,
     ) -> None:
 
         self._device = device
@@ -30,6 +32,9 @@ class OnlineReplayBuffer:
         self._reward = (buffer.rewards)[:-1, :]
         self._next_state = observations[1:,:]
         self._next_action = actions[1:, :]
+        if action_low is not None and action_high is not None:
+            self._action = scale_action(self._action, action_low, action_high)
+            self._next_action = scale_action(self._next_action, action_low, action_high)
         self._not_done = 1. - (buffer.done)[:-1, :]
         self._return = np.zeros((self._size, 1), dtype=np.float32)
         self._advantage = np.zeros((self._size, 1), dtype=np.float32)

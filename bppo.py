@@ -5,7 +5,7 @@ from buffer import OnlineReplayBuffer
 from net import GaussPolicyMLP
 from critic import ValueLearner, QLearner
 from ppo import ProximalPolicyOptimization
-from utils import CONST_EPS, log_prob_func, orthogonal_initWeights
+from utils import CONST_EPS, log_prob_func, orthogonal_initWeights, unscale_action
 import PyFlyt.gym_envs
 
 
@@ -88,6 +88,8 @@ class BehaviorCloning:
         eval_episodes: int=10,
         render_mode: str="",
         env_config: dict = {},
+        action_low: np.ndarray = None,
+        action_high: np.ndarray = None,
         ) -> float:
         if(render_mode == "human"):
             env = gym.make(env_name,
@@ -130,6 +132,8 @@ class BehaviorCloning:
                 s = torch.FloatTensor((np.array(s).reshape(1, -1) - mean) / std).to(self._device)
                 a = self.select_action(s, is_sample=False).cpu().data.numpy().flatten()
                 #s, r, done, _ = env.step(a)
+                if action_low is not None and action_high is not None:
+                    a = unscale_action(a, action_low, action_high)
                 s, r, term, trunc, info = env.step(a)
                 done = (term or trunc)
                 total_reward += r
@@ -201,7 +205,8 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
         s, _, _, _, _, _, _, _ = replay_buffer.sample(self._batch_size)
         old_dist = self._old_policy(s)
         a = old_dist.rsample()
-        advantage = Q(s, a) - value(s)
+        advantage = Q(s, a.clamp(-1., 1.)) - value(s)
+        #advantage = Q(s, a) - value(s)
         advantage = (advantage - advantage.mean()) / (advantage.std() + CONST_EPS)
         # -------------------------------------Advantage-------------------------------------
         new_dist = self._policy(s)
@@ -237,41 +242,10 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
         eval_episodes: int=10,
         render_mode="",
         env_config: dict = {},
+        action_low: np.ndarray = None,
+        action_high: np.ndarray = None,
         ) -> float:
-        if(render_mode == "human"):
-            env = gym.make(env_name,
-                    adaptive_train_flag=env_config["adaptive_train_flag"],
-                    pos_orn_flag=env_config["pos_orn_flag"],
-                    flag=env_config["flag"],
-                    mode=env_config["mode"],
-                    lower_bound=env_config["lower_bound"],
-                    upper_bound=env_config["upper_bound"],
-                    flight_dome_size=env_config["flight_dome_size"],
-                    sparse_reward=env_config["sparse_reward"],
-                    max_duration_seconds=env_config["max_duration_seconds"],
-                    start_pos_dict=env_config["start_pos_dict"],
-                    start_orn_dict=env_config["start_orn_dict"],
-                    goal_state_dict=env_config["goal_state_dict"],
-                    render_mode=render_mode,
-                )
-        else:
-            env = gym.make(env_name,
-                    adaptive_train_flag=env_config["adaptive_train_flag"],
-                    pos_orn_flag=env_config["pos_orn_flag"],
-                    flag=env_config["flag"],
-                    mode=env_config["mode"],
-                    lower_bound=env_config["lower_bound"],
-                    upper_bound=env_config["upper_bound"],
-                    flight_dome_size=env_config["flight_dome_size"],
-                    sparse_reward=env_config["sparse_reward"],
-                    max_duration_seconds=env_config["max_duration_seconds"],
-                    start_pos_dict=env_config["start_pos_dict"],
-                    start_orn_dict=env_config["start_orn_dict"],
-                    goal_state_dict=env_config["goal_state_dict"],
-                    )
-        #avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes,
-                #"human", env_config)
         avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes,
-                "", env_config)
+                "", env_config, action_low, action_high)
         d4rl_score = self.get_normalized_score(avg_reward) * 100
         return d4rl_score

@@ -6,7 +6,7 @@ from copy import deepcopy
 from buffer import OnlineReplayBuffer
 from net import GaussPolicyMLP
 from critic import ValueLearner, QLearner
-from utils import orthogonal_initWeights, log_prob_func
+from utils import orthogonal_initWeights, log_prob_func, unscale_action
 
 
 
@@ -153,6 +153,8 @@ class ProximalPolicyOptimization:
         eval_episodes: int=10,
         render_mode: str="",
         env_config: dict={},
+        action_low: np.ndarray = None,
+        action_high: np.ndarray = None,
         ) -> float:
         if(render_mode == "human"):
             env = gym.make(env_name,
@@ -194,6 +196,8 @@ class ProximalPolicyOptimization:
             while not done:
                 s = torch.FloatTensor((np.array(s).reshape(1, -1) - mean) / std).to(self._device)
                 a = self.select_action(s, is_sample=False).cpu().data.numpy().flatten()
+                if action_low is not None and action_high is not None:
+                    a = unscale_action(a, action_low, action_high)
                 s, r, term, trunc, info = env.step(a)
                 done = (term or trunc)
                 total_reward += r
