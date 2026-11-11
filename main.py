@@ -100,7 +100,9 @@ if __name__ == "__main__":
     dataset, env = d3rlpy.datasets.get_minari(dataset_name,
             action_space=d3rlpy.ActionSpace.CONTINUOUS,
             online = False)
-    replay_buffer = OfflineReplayBuffer(device, dataset)
+    action_low = env.action_space.low
+    action_high = env.action_space.high
+    replay_buffer = OfflineReplayBuffer(device, dataset, action_low, action_high)
     replay_buffer.compute_return(args.gamma)
     max_reward, min_reward = replay_buffer.get_max_min_reward()
 
@@ -202,7 +204,8 @@ if __name__ == "__main__":
 
             if step % int(args.log_freq) == 0:
                 current_bc_score = bc.offline_evaluate(args.env, args.seed,
-                        mean, std, env_config=env_config)
+                        mean, std, env_config=env_config,
+                        action_low=action_low, action_high=action_high)
                 if current_bc_score > best_bc_score:
                     best_bc_score = current_bc_score
                     bc.save(best_bc_path)
@@ -221,7 +224,8 @@ if __name__ == "__main__":
     Q = Q_bc
 
     best_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean, std,
-            env_config=env_config)
+            env_config=env_config, action_low=action_low,
+            action_high=action_high,)
     print('best_bppo_score:',best_bppo_score,'-------------------------')
 
     for step in tqdm(range(int(args.bppo_steps)), desc='bppo updating ......'):
@@ -230,7 +234,8 @@ if __name__ == "__main__":
             args.is_bppo_lr_decay = False
         bppo_loss = bppo.update(replay_buffer, Q, value, args.is_clip_decay, args.is_bppo_lr_decay)
         current_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean,
-                std, env_config=env_config)
+                std, env_config=env_config, action_low=action_low,
+                action_high=action_high)
 
         if current_bppo_score > best_bppo_score:
             best_bppo_score = current_bppo_score
