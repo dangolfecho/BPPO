@@ -201,7 +201,7 @@ class ProximalPolicyOptimization:
                 s, r, term, trunc, info = env.step(a)
                 done = (term or trunc)
                 total_reward += r
-        
+        env.close()
         avg_reward = total_reward / eval_episodes
         return avg_reward
 

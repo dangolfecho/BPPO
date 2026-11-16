@@ -138,6 +138,7 @@ class BehaviorCloning:
                 done = (term or trunc)
                 total_reward += r
         
+        env.close()
         avg_reward = total_reward / eval_episodes
         d4rl_score = self.get_normalized_score(avg_reward) * 100
         return d4rl_score
