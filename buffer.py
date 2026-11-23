@@ -22,7 +22,6 @@ class OnlineReplayBuffer:
     ) -> None:
 
         self._device = device
-        self._size = (buffer.size()-1)
 
         observations = buffer.observations
         actions = buffer.actions
@@ -36,6 +35,7 @@ class OnlineReplayBuffer:
             self._action = scale_action(self._action, action_low, action_high)
             self._next_action = scale_action(self._next_action, action_low, action_high)
         self._not_done = 1. - (buffer.done)[:-1, :]
+        self._size = len(self._state)
         self._return = np.zeros((self._size, 1), dtype=np.float32)
         self._advantage = np.zeros((self._size, 1), dtype=np.float32)
 

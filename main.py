@@ -96,7 +96,8 @@ if __name__ == "__main__":
     # offline dataset to replay buffer
     #print(((args.env).split('/'))[1])
     #dataset_id = ((args.env).split('/'))[1]+"/"+"dataset-14-0-20-v3"
-    dataset_name = "QuadX-Hover-v4/dataset-14-combined-10M-v0"
+    #dataset_name = "QuadX-Hover-v4/dataset-14-combined-10M-v0"
+    dataset_name = "QuadX-Hover-v4/dataset-14-fixednew-10M-v3"
     dataset, env = d3rlpy.datasets.get_minari(dataset_name,
             action_space=d3rlpy.ActionSpace.CONTINUOUS,
             online = False)
@@ -106,7 +107,8 @@ if __name__ == "__main__":
     replay_buffer.compute_return(args.gamma)
     max_reward, min_reward = replay_buffer.get_max_min_reward()
 
-    adaptive_train_flag = True
+    #adaptive_train_flag = True
+    adaptive_train_flag = False
     pos_orn_flag = 1
     flag = 0
     mode = 2
